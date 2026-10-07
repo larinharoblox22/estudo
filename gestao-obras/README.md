@@ -12,7 +12,7 @@ paralelos ao Spring Boot.
 |---|---|---|---|
 | 1 | Modelo (JPA & OOP) | ✅ | [docs/passo-01-modelo-jpa.md](docs/passo-01-modelo-jpa.md) |
 | 2 | DAO e EntityManager | ✅ | [docs/passo-02-dao-entitymanager.md](docs/passo-02-dao-entitymanager.md) |
-| 3 | Camada de negócio (EJB) | ⏳ | |
+| 3 | Camada de negócio (EJB) | ✅ | [docs/passo-03-ejb-negocio.md](docs/passo-03-ejb-negocio.md) |
 | 4 | Frontend (JSF & PrimeFaces) | ⏳ | |
 | 5 | Integração (API REST JAX-RS) | ⏳ | |
 

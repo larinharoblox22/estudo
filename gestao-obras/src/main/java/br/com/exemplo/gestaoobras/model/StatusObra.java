@@ -21,4 +21,12 @@ public enum StatusObra {
     public String getDescricao() {
         return descricao;
     }
+
+    /**
+     * Regra de transição de status: uma obra concluída é um estado final
+     * e não pode voltar a nenhum outro status.
+     */
+    public boolean podeMudarPara(StatusObra novoStatus) {
+        return this != CONCLUIDA || novoStatus == CONCLUIDA;
+    }
 }
