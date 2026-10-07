@@ -16,6 +16,8 @@ paralelos ao Spring Boot.
 | 4 | Frontend (JSF & PrimeFaces) | ⏳ | |
 | 5 | Integração (API REST JAX-RS) | ⏳ | |
 
+Transversal: [docs/solid.md](docs/solid.md) — onde cada princípio SOLID aparece no código e por quê.
+
 ## Compilar
 
 ```bash
