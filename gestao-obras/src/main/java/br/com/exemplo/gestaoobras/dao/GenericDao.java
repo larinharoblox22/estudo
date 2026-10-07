@@ -1,4 +1,4 @@
-package pt.exemplo.gestaoobras.dao;
+package br.com.exemplo.gestaoobras.dao;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -13,7 +13,7 @@ import java.util.Optional;
  * <p>
  * O DAO não abre transações: {@code MANDATORY} exige que quem o chama
  * (a camada de negócio, Passo 3) já tenha uma transação ativa. Assim, a
- * fronteira transacional é decidida num único sítio.
+ * fronteira transacional é decidida em um único lugar.
  *
  * @param <T>  tipo da entidade
  * @param <ID> tipo da chave primária
@@ -21,8 +21,8 @@ import java.util.Optional;
 @Transactional(Transactional.TxType.MANDATORY)
 public abstract class GenericDao<T, ID> {
 
-    // Proxy gerido pelo contentor: cada transação JTA recebe o seu próprio
-    // Persistence Context, por isso é seguro partilhar este campo entre threads.
+    // Proxy gerenciado pelo contêiner: cada transação JTA recebe o seu próprio
+    // Persistence Context, por isso é seguro compartilhar este campo entre threads.
     @PersistenceContext(unitName = "gestaoObrasPU")
     protected EntityManager em;
 
@@ -32,20 +32,20 @@ public abstract class GenericDao<T, ID> {
         this.classeEntidade = classeEntidade;
     }
 
-    /** NEW → MANAGED. O INSERT é executado no flush/commit (com IDENTITY, de imediato). */
+    /** NEW → MANAGED. O INSERT é executado no flush/commit (com IDENTITY, imediatamente). */
     public void inserir(T entidade) {
         em.persist(entidade);
     }
 
     /**
-     * DETACHED → MANAGED. Devolve a instância gerida; a que foi passada
-     * continua detached e não deve voltar a ser usada.
+     * DETACHED → MANAGED. Retorna a instância gerenciada; a que foi passada
+     * continua detached e não deve ser usada novamente.
      */
     public T atualizar(T entidade) {
         return em.merge(entidade);
     }
 
-    /** MANAGED → REMOVED. Devolve {@code false} se o registo já não existir. */
+    /** MANAGED → REMOVED. Retorna {@code false} se o registro não existir mais. */
     public boolean removerPorId(ID id) {
         T entidade = em.find(classeEntidade, id);
         if (entidade == null) {
@@ -55,7 +55,7 @@ public abstract class GenericDao<T, ID> {
         return true;
     }
 
-    /** Consulta primeiro o Persistence Context (cache de 1.º nível) e só depois a BD. */
+    /** Consulta primeiro o Persistence Context (cache de 1º nível) e só depois o banco. */
     public Optional<T> buscarPorId(ID id) {
         return Optional.ofNullable(em.find(classeEntidade, id));
     }

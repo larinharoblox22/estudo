@@ -1,15 +1,15 @@
-package pt.exemplo.gestaoobras.dao;
+package br.com.exemplo.gestaoobras.dao;
 
+import br.com.exemplo.gestaoobras.model.Obra;
+import br.com.exemplo.gestaoobras.model.StatusObra;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.TypedQuery;
-import pt.exemplo.gestaoobras.model.Obra;
-import pt.exemplo.gestaoobras.model.StatusObra;
 
 import java.util.List;
 
 /**
  * Acesso a dados da entidade {@link Obra}.
- * Todo o JPQL sobre obras vive aqui e em mais lado nenhum.
+ * Todo JPQL sobre obras fica aqui e em nenhum outro lugar.
  */
 @ApplicationScoped
 public class ObraDao extends GenericDao<Obra, Long> {
@@ -34,7 +34,7 @@ public class ObraDao extends GenericDao<Obra, Long> {
         super(Obra.class);
     }
 
-    /** Sobrepõe a versão genérica para garantir uma ordenação estável. */
+    /** Sobrescreve a versão genérica para garantir uma ordenação estável. */
     @Override
     public List<Obra> listarTodos() {
         return em.createQuery(JPQL_LISTAR_TODAS, Obra.class)
@@ -48,7 +48,7 @@ public class ObraDao extends GenericDao<Obra, Long> {
     }
 
     /**
-     * Pesquisa parcial e sem distinção de maiúsculas.
+     * Pesquisa parcial e sem diferenciar maiúsculas de minúsculas.
      * O termo é passado como parâmetro (nunca concatenado na String),
      * o que impede SQL Injection.
      */
@@ -61,8 +61,8 @@ public class ObraDao extends GenericDao<Obra, Long> {
     /**
      * Verifica se já existe outra obra com o mesmo nome.
      *
-     * @param idIgnorar ID da obra em edição (para não colidir consigo própria);
-     *                  {@code null} numa inserção
+     * @param idIgnorar ID da obra em edição (para não colidir com ela mesma);
+     *                  {@code null} em uma inserção
      */
     public boolean existeComNome(String nome, Long idIgnorar) {
         TypedQuery<Long> query = (idIgnorar == null)

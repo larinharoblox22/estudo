@@ -8,7 +8,7 @@ paralelos ao Spring Boot.
 
 ## Progresso
 
-| Passo | Tema | Estado | Relatório |
+| Passo | Tema | Status | Relatório |
 |---|---|---|---|
 | 1 | Modelo (JPA & OOP) | ✅ | [docs/passo-01-modelo-jpa.md](docs/passo-01-modelo-jpa.md) |
 | 2 | DAO e EntityManager | ✅ | [docs/passo-02-dao-entitymanager.md](docs/passo-02-dao-entitymanager.md) |
@@ -24,8 +24,8 @@ mvn package    # gera target/gestao-obras.war
 
 ## Executar (WildFly)
 
-Não é preciso configurar base de dados: a aplicação usa o `java:comp/DefaultDataSource`
-do servidor (H2 em memória no WildFly) e carrega dados de demonstração no arranque.
+Não é preciso configurar banco de dados: a aplicação usa o `java:comp/DefaultDataSource`
+do servidor (H2 em memória no WildFly) e carrega dados de demonstração na inicialização.
 
 ```bash
 cp target/gestao-obras.war $WILDFLY_HOME/standalone/deployments/

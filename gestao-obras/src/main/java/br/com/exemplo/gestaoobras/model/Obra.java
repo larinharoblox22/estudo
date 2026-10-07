@@ -1,4 +1,4 @@
-package pt.exemplo.gestaoobras.model;
+package br.com.exemplo.gestaoobras.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -44,9 +44,9 @@ public class Obra implements Serializable {
     @NotNull(message = "O status é obrigatório")
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
-    private StatusObra status = StatusObra.PLANEADA;
+    private StatusObra status = StatusObra.PLANEJADA;
 
-    // Controlo de concorrência otimista: impede que dois utilizadores
+    // Controle de concorrência otimista: impede que dois usuários
     // sobrescrevam silenciosamente as alterações um do outro.
     @Version
     @Column(name = "versao", nullable = false)
@@ -131,9 +131,9 @@ public class Obra implements Serializable {
     }
 
     // ---- Identidade ----
-    // Baseada no ID gerado pela BD. Usa instanceof + getId() (e não getClass()
+    // Baseada no ID gerado pelo banco. Usa instanceof + getId() (e não getClass()
     // nem acesso direto ao campo) para funcionar com proxies LAZY do Hibernate.
-    // hashCode constante: mantém-se estável antes e depois do persist().
+    // hashCode constante: se mantém estável antes e depois do persist().
 
     @Override
     public boolean equals(Object o) {

@@ -4,28 +4,28 @@
              xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
              version="3.0">
 
-    <!-- JTA: as transações são coordenadas pelo servidor aplicacional
-         (os EJBs do Passo 3 abrem-nas e fecham-nas automaticamente). -->
+    <!-- JTA: as transações são coordenadas pelo servidor de aplicação
+         (os EJBs do Passo 3 as abrem e fecham automaticamente). -->
     <persistence-unit name="gestaoObrasPU" transaction-type="JTA">
 
-        <!-- DataSource obtido por JNDI. java:comp/DefaultDataSource é obrigatório
+        <!-- DataSource obtido via JNDI. java:comp/DefaultDataSource é obrigatório
              em qualquer servidor Jakarta EE (no WildFly e no Payara é um H2 em memória).
              Para PostgreSQL: criar o DataSource no servidor e trocar só este nome JNDI,
-             p.ex. java:jboss/datasources/GestaoObrasDS. -->
+             ex.: java:jboss/datasources/GestaoObrasDS. -->
         <jta-data-source>java:comp/DefaultDataSource</jta-data-source>
 
-        <class>pt.exemplo.gestaoobras.model.Obra</class>
-        <class>pt.exemplo.gestaoobras.model.RelatorioSeguranca</class>
+        <class>br.com.exemplo.gestaoobras.model.Obra</class>
+        <class>br.com.exemplo.gestaoobras.model.RelatorioSeguranca</class>
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
 
         <properties>
-            <!-- Equivalente a spring.jpa.hibernate.ddl-auto=create-drop (só para desenvolvimento). -->
+            <!-- Equivalente a spring.jpa.hibernate.ddl-auto=create-drop (somente em desenvolvimento). -->
             <property name="jakarta.persistence.schema-generation.database.action" value="drop-and-create"/>
             <!-- Equivalente ao data.sql do Spring Boot. -->
             <property name="jakarta.persistence.sql-load-script-source" value="META-INF/dados-iniciais.sql"/>
 
             <!-- Específicas do Hibernate (provider do WildFly); outros providers ignoram. -->
-            <!-- Sem isto, o script é lido com o charset da JVM (p.ex. Cp1252 em Windows) e os acentos corrompem-se. -->
+            <!-- Sem isto, o script é lido com o charset da JVM (ex.: Cp1252 no Windows) e os acentos são corrompidos. -->
             <property name="hibernate.hbm2ddl.charset_name" value="UTF-8"/>
             <property name="hibernate.show_sql" value="true"/>
             <property name="hibernate.format_sql" value="true"/>

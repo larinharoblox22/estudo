@@ -1,7 +1,7 @@
-package pt.exemplo.gestaoobras.dao;
+package br.com.exemplo.gestaoobras.dao;
 
+import br.com.exemplo.gestaoobras.model.RelatorioSeguranca;
 import jakarta.enterprise.context.ApplicationScoped;
-import pt.exemplo.gestaoobras.model.RelatorioSeguranca;
 
 import java.util.List;
 
@@ -29,7 +29,7 @@ public class RelatorioSegurancaDao extends GenericDao<RelatorioSeguranca, Long> 
         super(RelatorioSeguranca.class);
     }
 
-    /** Relatórios de uma obra, do mais recente para o mais antigo (obra fica como proxy LAZY). */
+    /** Relatórios de uma obra, do mais recente para o mais antigo (a obra fica como proxy LAZY). */
     public List<RelatorioSeguranca> listarPorObra(Long obraId) {
         return em.createQuery(JPQL_LISTAR_POR_OBRA, RelatorioSeguranca.class)
                  .setParameter("obraId", obraId)
@@ -38,7 +38,7 @@ public class RelatorioSegurancaDao extends GenericDao<RelatorioSeguranca, Long> 
 
     /**
      * Últimos relatórios de todas as obras, já com a obra carregada.
-     * Seguro de usar fora da transação (p.ex. numa página JSF a mostrar o nome da obra).
+     * Seguro de usar fora da transação (ex.: em uma página JSF exibindo o nome da obra).
      */
     public List<RelatorioSeguranca> listarRecentesComObra(int limite) {
         return em.createQuery(JPQL_LISTAR_RECENTES_COM_OBRA, RelatorioSeguranca.class)
@@ -53,10 +53,10 @@ public class RelatorioSegurancaDao extends GenericDao<RelatorioSeguranca, Long> 
     }
 
     /**
-     * Bulk delete: um único DELETE na BD, sem carregar as entidades.
+     * Bulk delete: um único DELETE no banco, sem carregar as entidades.
      * Atenção: ignora o Persistence Context e os callbacks @PreRemove.
      *
-     * @return número de registos removidos
+     * @return número de registros removidos
      */
     public int removerPorObra(Long obraId) {
         return em.createQuery(JPQL_REMOVER_POR_OBRA)

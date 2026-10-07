@@ -1,4 +1,4 @@
-package pt.exemplo.gestaoobras.model;
+package br.com.exemplo.gestaoobras.model;
 
 /**
  * Estados possíveis de uma obra ao longo do seu ciclo de vida.
@@ -7,8 +7,8 @@ package pt.exemplo.gestaoobras.model;
  */
 public enum StatusObra {
 
-    PLANEADA("Planeada"),
-    EM_CURSO("Em curso"),
+    PLANEJADA("Planejada"),
+    EM_ANDAMENTO("Em andamento"),
     SUSPENSA("Suspensa"),
     CONCLUIDA("Concluída");
 

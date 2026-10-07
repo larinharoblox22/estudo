@@ -1,4 +1,4 @@
-package pt.exemplo.gestaoobras.model;
+package br.com.exemplo.gestaoobras.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,7 +21,7 @@ import java.time.LocalDate;
 import java.util.Objects;
 
 /**
- * Relatório de uma inspeção de segurança realizada numa obra.
+ * Relatório de uma inspeção de segurança realizada em uma obra.
  * Lado "dono" (owning side) da relação: é esta tabela que guarda a FK obra_id.
  */
 @Entity
@@ -45,10 +45,10 @@ public class RelatorioSeguranca implements Serializable {
     @Column(name = "descricao", nullable = false, length = 2000)
     private String descricao;
 
-    // LAZY: carregar um relatório NÃO dispara um SELECT à tabela obra.
-    // optional = false: todo o relatório pertence obrigatoriamente a uma obra
+    // LAZY: carregar um relatório NÃO dispara um SELECT na tabela obra.
+    // optional = false: todo relatório pertence obrigatoriamente a uma obra
     // (permite ao Hibernate gerar INNER JOIN em vez de LEFT JOIN).
-    @NotNull(message = "O relatório tem de estar associado a uma obra")
+    @NotNull(message = "O relatório precisa estar associado a uma obra")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "obra_id", nullable = false,
                 foreignKey = @ForeignKey(name = "fk_relatorio_obra"))
@@ -109,8 +109,8 @@ public class RelatorioSeguranca implements Serializable {
         return RelatorioSeguranca.class.hashCode();
     }
 
-    // Não inclui 'obra': tocar no proxy LAZY fora de uma transação
-    // lançaria LazyInitializationException só por fazer log do objeto.
+    // Não inclui 'obra': acessar o proxy LAZY fora de uma transação
+    // lançaria LazyInitializationException só por logar o objeto.
     @Override
     public String toString() {
         return "RelatorioSeguranca{id=" + id + ", dataInspecao=" + dataInspecao + '}';
