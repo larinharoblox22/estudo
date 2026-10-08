@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<faces-config xmlns="https://jakarta.ee/xml/ns/jakartaee"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-facesconfig_4_0.xsd"
+              version="4.0">
+
+    <application>
+        <!-- Idioma da aplicação: define textos, formatos de data e mensagens padrão do JSF. -->
+        <locale-config>
+            <default-locale>pt_BR</default-locale>
+        </locale-config>
+
+        <!-- Arquivo de textos da tela (src/main/resources/messages.properties),
+             acessível em qualquer página como #{msg['chave']}. -->
+        <resource-bundle>
+            <base-name>messages</base-name>
+            <var>msg</var>
+        </resource-bundle>
+    </application>
+</faces-config>

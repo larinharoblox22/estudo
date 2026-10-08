@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<!--
+    Template (modelo) comum a todas as páginas: cabeçalho, CSS e área de conteúdo.
+    Fica em WEB-INF para não poder ser acessado diretamente pelo navegador.
+    Cada página "preenche" os buracos marcados com <ui:insert>.
+-->
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:ui="jakarta.faces.facelets">
+<h:head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>#{msg['app.titulo']}</title>
+    <h:outputStylesheet name="css/app.css"/>
+</h:head>
+<h:body>
+    <header class="topo">
+        <h1>#{msg['app.titulo']}</h1>
+        <span>#{msg['app.subtitulo']}</span>
+    </header>
+
+    <main class="conteudo">
+        <ui:insert name="conteudo"/>
+    </main>
+</h:body>
+</html>

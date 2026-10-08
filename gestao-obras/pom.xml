@@ -27,6 +27,16 @@
             <version>${jakartaee.version}</version>
             <scope>provided</scope>
         </dependency>
+
+        <!-- Biblioteca de componentes JSF. Ao contrário das APIs Jakarta EE, não vem
+             com o servidor: é empacotada no WAR (escopo compile). O classificador
+             "jakarta" seleciona a versão para o namespace jakarta.* (Faces 4). -->
+        <dependency>
+            <groupId>org.primefaces</groupId>
+            <artifactId>primefaces</artifactId>
+            <version>15.0.18</version>
+            <classifier>jakarta</classifier>
+        </dependency>
     </dependencies>
 
     <build>

@@ -13,7 +13,7 @@ paralelos ao Spring Boot.
 | 1 | Modelo (JPA & OOP) | ✅ | [docs/passo-01-modelo-jpa.md](docs/passo-01-modelo-jpa.md) |
 | 2 | DAO e EntityManager | ✅ | [docs/passo-02-dao-entitymanager.md](docs/passo-02-dao-entitymanager.md) |
 | 3 | Camada de negócio (EJB) | ✅ | [docs/passo-03-ejb-negocio.md](docs/passo-03-ejb-negocio.md) |
-| 4 | Frontend (JSF & PrimeFaces) | ⏳ | |
+| 4 | Frontend (JSF & PrimeFaces) | ✅ | [docs/passo-04-jsf-primefaces.md](docs/passo-04-jsf-primefaces.md) |
 | 5 | Integração (API REST JAX-RS) | ⏳ | |
 
 Transversal: [docs/solid.md](docs/solid.md) — onde cada princípio SOLID aparece no código e por quê.
@@ -33,3 +33,7 @@ do servidor (H2 em memória no WildFly) e carrega dados de demonstração na ini
 cp target/gestao-obras.war $WILDFLY_HOME/standalone/deployments/
 $WILDFLY_HOME/bin/standalone.sh
 ```
+
+Depois, abra http://localhost:8080/gestao-obras/ no navegador.
+
+![Tela de obras](docs/img/passo-04/01-lista.png)

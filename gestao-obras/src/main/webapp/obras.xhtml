@@ -1,0 +1,209 @@
+<!--
+    Tela de obras (a "View" do MVC). Usa o template layout.xhtml e preenche a área "conteudo".
+
+    Convenções de AJAX do PrimeFaces usadas aqui:
+      process = quais componentes são ENVIADOS e processados no servidor (validação, atualização do bean)
+      update  = quais componentes são RE-DESENHADOS com a resposta
+    Ids que começam com ":" são absolutos (ex.: ":formObras:tabelaObras");
+    "@form" = o formulário atual, "@this" = o próprio componente.
+-->
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:p="http://primefaces.org/ui"
+                template="/WEB-INF/templates/layout.xhtml">
+
+    <ui:define name="conteudo">
+
+        <!-- Mensagens flutuantes. p:autoUpdate: re-desenhada em TODA requisição AJAX.
+             globalOnly: mostra só mensagens gerais (sucesso, regra de negócio); os erros
+             de um campo específico já aparecem embaixo do próprio campo (p:message). -->
+        <p:growl id="mensagens" life="6000" globalOnly="true">
+            <p:autoUpdate/>
+        </p:growl>
+
+        <!-- ===================== Lista de obras ===================== -->
+        <h:form id="formObras">
+
+            <p:toolbar styleClass="barra">
+                <p:toolbarGroup>
+                    <p:commandButton id="botaoNovaObra" value="#{msg['obra.nova']}" icon="pi pi-plus"
+                                     actionListener="#{obraBean.novaObra}"
+                                     process="@this" update=":dlgObra"
+                                     oncomplete="PF('dlgObra').show()"/>
+                </p:toolbarGroup>
+                <p:toolbarGroup align="right">
+                    <p:outputLabel for="filtroStatus" value="#{msg['obra.filtro.status']}" styleClass="rotulo-filtro"/>
+                    <!-- Filtro no SERVIDOR: cada mudança dispara uma requisição AJAX que
+                         chama obraBean.filtrar() e re-desenha só a tabela. -->
+                    <p:selectOneMenu id="filtroStatus" value="#{obraBean.filtroStatus}">
+                        <f:selectItem itemLabel="#{msg['obra.filtro.todos']}" noSelectionOption="true"/>
+                        <f:selectItems value="#{obraBean.statusDisponiveis}" var="s"
+                                       itemValue="#{s}" itemLabel="#{msg['status.' += s]}"/>
+                        <p:ajax listener="#{obraBean.filtrar}" update="tabelaObras"/>
+                    </p:selectOneMenu>
+                </p:toolbarGroup>
+            </p:toolbar>
+
+            <!-- reflow: em telas estreitas (celular) cada linha vira um "cartão" empilhado. -->
+            <p:dataTable id="tabelaObras" value="#{obraBean.obras}" var="obra"
+                         paginator="true" rows="10" paginatorPosition="bottom"
+                         emptyMessage="#{msg['obra.tabela.vazia']}"
+                         reflow="true" stripedRows="true" size="small">
+
+                <!-- filterBy: filtro feito pelo PRÓPRIO componente, sobre a lista já carregada. -->
+                <p:column headerText="#{msg['obra.nome']}" sortBy="#{obra.nome}"
+                          filterBy="#{obra.nome}" filterMatchMode="contains">
+                    <h:outputText value="#{obra.nome}"/>
+                </p:column>
+
+                <p:column headerText="#{msg['obra.localizacao']}" sortBy="#{obra.localizacao}">
+                    <h:outputText value="#{obra.localizacao}"/>
+                </p:column>
+
+                <p:column headerText="#{msg['obra.status']}" sortBy="#{obra.status}" styleClass="coluna-status">
+                    <!-- Texto vindo do messages.properties: "status." + nome da constante do enum. -->
+                    <p:tag value="#{msg['status.' += obra.status]}" severity="#{obraBean.severidade(obra.status)}"/>
+                </p:column>
+
+                <p:column headerText="#{msg['acao.titulo']}" styleClass="coluna-acoes">
+                    <p:commandButton icon="pi pi-pencil" title="#{msg['acao.editar']}"
+                                     styleClass="rounded-button ui-button-flat"
+                                     actionListener="#{obraBean.editar(obra)}"
+                                     process="@this" update=":dlgObra"
+                                     oncomplete="PF('dlgObra').show()"/>
+
+                    <p:commandButton icon="pi pi-file" title="#{msg['acao.relatorios']}"
+                                     styleClass="rounded-button ui-button-flat"
+                                     actionListener="#{relatorioSegurancaBean.abrir(obra)}"
+                                     process="@this" update=":dlgRelatorios"
+                                     oncomplete="PF('dlgRelatorios').show()"/>
+
+                    <p:commandButton icon="pi pi-trash" title="#{msg['acao.excluir']}"
+                                     styleClass="rounded-button ui-button-flat ui-button-danger"
+                                     actionListener="#{obraBean.excluir(obra)}"
+                                     process="@this" update="tabelaObras">
+                        <p:confirm header="#{msg['acao.confirmar']}"
+                                   message="#{msg['obra.confirmar.exclusao']}"
+                                   icon="pi pi-exclamation-triangle"/>
+                    </p:commandButton>
+                </p:column>
+            </p:dataTable>
+        </h:form>
+
+        <!-- Diálogo de confirmação compartilhado por todos os <p:confirm> da página. -->
+        <h:form id="formConfirmacao">
+            <p:confirmDialog global="true" showEffect="fade" hideEffect="fade">
+                <p:commandButton value="#{msg['acao.nao']}" type="button"
+                                 styleClass="ui-confirmdialog-no ui-button-secondary" icon="pi pi-times"/>
+                <p:commandButton value="#{msg['acao.sim']}" type="button"
+                                 styleClass="ui-confirmdialog-yes ui-button-danger" icon="pi pi-check"/>
+            </p:confirmDialog>
+        </h:form>
+
+        <!-- ===================== Diálogo: nova / editar obra ===================== -->
+        <!-- O diálogo fica FORA do formulário principal e tem o seu próprio <h:form>:
+             assim "Salvar" envia só os campos da obra, e não a tabela inteira. -->
+        <p:dialog id="dlgObra" widgetVar="dlgObra" modal="true" resizable="false"
+                  responsive="true" width="480"
+                  header="#{obraBean.edicao ? msg['obra.editar'] : msg['obra.nova']}">
+            <h:form id="formObra">
+                <div class="ui-fluid">
+                    <div class="campo">
+                        <!-- p:outputLabel lê o @NotBlank da entidade e coloca o "*" de obrigatório sozinho. -->
+                        <p:outputLabel for="nome" value="#{msg['obra.nome']}"/>
+                        <p:inputText id="nome" value="#{obraBean.obraEmEdicao.nome}" maxlength="150"/>
+                        <p:message for="nome"/>
+                    </div>
+                    <div class="campo">
+                        <p:outputLabel for="localizacao" value="#{msg['obra.localizacao']}"/>
+                        <p:inputText id="localizacao" value="#{obraBean.obraEmEdicao.localizacao}" maxlength="255"/>
+                        <p:message for="localizacao"/>
+                    </div>
+                    <div class="campo">
+                        <p:outputLabel for="status" value="#{msg['obra.status']}"/>
+                        <!-- Sem conversor explícito: o JSF converte texto <-> enum sozinho (EnumConverter). -->
+                        <p:selectOneMenu id="status" value="#{obraBean.obraEmEdicao.status}">
+                            <f:selectItems value="#{obraBean.statusDisponiveis}" var="s"
+                                           itemValue="#{s}" itemLabel="#{msg['status.' += s]}"/>
+                        </p:selectOneMenu>
+                        <p:message for="status"/>
+                    </div>
+                </div>
+
+                <div class="acoes">
+                    <p:commandButton value="#{msg['acao.cancelar']}" type="button"
+                                     styleClass="ui-button-secondary" onclick="PF('dlgObra').hide()"/>
+                    <!-- Só fecha o diálogo se NÃO houve erro (validação ou regra de negócio). -->
+                    <p:commandButton id="botaoSalvar" value="#{msg['acao.salvar']}" icon="pi pi-check"
+                                     actionListener="#{obraBean.salvar}"
+                                     process="@form" update="@form :formObras:tabelaObras"
+                                     oncomplete="if (!args.validationFailed) PF('dlgObra').hide()"/>
+                </div>
+            </h:form>
+        </p:dialog>
+
+        <!-- ===================== Diálogo: relatórios de segurança ===================== -->
+        <p:dialog id="dlgRelatorios" widgetVar="dlgRelatorios" modal="true" resizable="false"
+                  responsive="true" width="760"
+                  header="#{msg['relatorio.titulo']} — #{relatorioSegurancaBean.obra.nome}">
+            <h:form id="formRelatorios">
+
+                <p:dataTable id="tabelaRelatorios" value="#{relatorioSegurancaBean.relatorios}" var="relatorio"
+                             emptyMessage="#{msg['relatorio.tabela.vazia']}" reflow="true" size="small"
+                             scrollable="true" scrollHeight="220">
+                    <p:column headerText="#{msg['relatorio.data']}" styleClass="coluna-data">
+                        <h:outputText value="#{relatorio.dataInspecao}">
+                            <f:convertDateTime type="localDate" pattern="dd/MM/yyyy"/>
+                        </h:outputText>
+                    </p:column>
+                    <p:column headerText="#{msg['relatorio.descricao']}">
+                        <h:outputText value="#{relatorio.descricao}"/>
+                    </p:column>
+                    <p:column styleClass="coluna-icone">
+                        <p:commandButton icon="pi pi-trash" title="#{msg['acao.excluir']}"
+                                         styleClass="rounded-button ui-button-flat ui-button-danger"
+                                         actionListener="#{relatorioSegurancaBean.excluir(relatorio)}"
+                                         process="@this" update="tabelaRelatorios">
+                            <p:confirm header="#{msg['acao.confirmar']}"
+                                       message="#{msg['relatorio.confirmar.exclusao']}"
+                                       icon="pi pi-exclamation-triangle"/>
+                        </p:commandButton>
+                    </p:column>
+                </p:dataTable>
+
+                <!-- Obra concluída: a tela esconde o formulário, mas a regra REAL está no
+                     service (RelatorioSegurancaServiceBean). A tela só melhora a experiência. -->
+                <p:staticMessage severity="warn" summary="#{msg['relatorio.obra.concluida']}"
+                                 rendered="#{relatorioSegurancaBean.obra.concluida}" styleClass="aviso"/>
+
+                <h:panelGroup layout="block" styleClass="ui-fluid novo-relatorio"
+                              rendered="#{not relatorioSegurancaBean.obra.concluida}">
+                    <div class="campo">
+                        <p:outputLabel for="dataInspecao" value="#{msg['relatorio.data']}"/>
+                        <p:datePicker id="dataInspecao" value="#{relatorioSegurancaBean.novoRelatorio.dataInspecao}"
+                                      pattern="dd/MM/yyyy" maxdate="#{relatorioSegurancaBean.hoje}" showIcon="true"/>
+                        <p:message for="dataInspecao"/>
+                    </div>
+                    <div class="campo">
+                        <p:outputLabel for="descricao" value="#{msg['relatorio.descricao']}"/>
+                        <p:inputTextarea id="descricao" value="#{relatorioSegurancaBean.novoRelatorio.descricao}"
+                                         rows="3" maxlength="2000" autoResize="false"/>
+                        <p:message for="descricao"/>
+                    </div>
+                    <div class="campo-check">
+                        <p:selectBooleanCheckbox id="interditar" value="#{relatorioSegurancaBean.interditar}"
+                                                 itemLabel="#{msg['relatorio.interditar']}"/>
+                    </div>
+                    <div class="acoes">
+                        <p:commandButton id="botaoRegistrar" value="#{msg['relatorio.registrar']}" icon="pi pi-save"
+                                         actionListener="#{relatorioSegurancaBean.registrar}"
+                                         process="@form" update="@form :formObras:tabelaObras"/>
+                    </div>
+                </h:panelGroup>
+            </h:form>
+        </p:dialog>
+
+    </ui:define>
+</ui:composition>

@@ -1,0 +1,83 @@
+/* Ajustes visuais mínimos sobre o tema padrão do PrimeFaces. */
+
+body {
+    margin: 0;
+    background: #f4f6f8;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.topo {
+    background: #1f3a5f;
+    color: #ffffff;
+    padding: 1rem 1.5rem;
+}
+
+.topo h1 {
+    margin: 0;
+    font-size: 1.4rem;
+}
+
+.topo span {
+    opacity: 0.8;
+    font-size: 0.9rem;
+}
+
+.conteudo {
+    max-width: 1100px;
+    margin: 1.5rem auto;
+    padding: 0 1rem;
+}
+
+.barra {
+    margin-bottom: 1rem;
+}
+
+.rotulo-filtro {
+    margin-right: 0.5rem;
+}
+
+.coluna-status {
+    width: 10rem;
+}
+
+.coluna-acoes {
+    width: 10rem;
+    text-align: center;
+}
+
+.coluna-data {
+    width: 9rem;
+}
+
+.coluna-icone {
+    width: 4rem;
+    text-align: center;
+}
+
+.campo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 1rem;
+}
+
+.campo-check {
+    margin-bottom: 1rem;
+}
+
+.acoes {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.novo-relatorio {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid #dee2e6;
+}
+
+.aviso {
+    margin-top: 1rem;
+    width: 100%;
+}
