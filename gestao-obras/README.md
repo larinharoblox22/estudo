@@ -18,23 +18,49 @@ paralelos ao Spring Boot.
 
 Transversal: [docs/solid.md](docs/solid.md) — onde cada princípio SOLID aparece no código e por quê.
 
-## Compilar
+## Pré-requisito: só o Java
+
+Basta ter um **JDK 17 ou 21** instalado. O Maven e o WildFly são baixados automaticamente:
+
+- **Maven Wrapper** (`mvnw` / `mvnw.cmd`): scripts que baixam a versão certa do Maven
+  (3.9.11) na primeira execução e a guardam em `~/.m2/wrapper`. Você não precisa instalar o Maven.
+- **Profile `wildfly`**: baixa do Maven Central a distribuição oficial do WildFly 35, descompacta
+  em `target/` e o plugin `wildfly:run` inicia o servidor com a aplicação implantada.
+
+Confira o Java com `java -version`. Se o comando não for encontrado, configure a variável de
+ambiente `JAVA_HOME` apontando para a pasta do JDK (no Windows: *Painel de Controle → Sistema →
+Configurações avançadas → Variáveis de Ambiente*).
+
+## Executar
+
+Na pasta `gestao-obras/`:
+
+| Onde | Comando |
+|---|---|
+| Windows — Prompt de Comando (cmd) | `mvnw.cmd -Pwildfly package wildfly:run` |
+| Windows — PowerShell | `.\mvnw.cmd -Pwildfly package wildfly:run` |
+| Git Bash, Linux ou macOS | `./mvnw -Pwildfly package wildfly:run` |
+
+Quando o log mostrar `Deployed "gestao-obras.war"`, abra **http://localhost:8080/gestao-obras/**.
+Para parar o servidor, use **Ctrl+C** no terminal.
+
+- A primeira execução demora mais: baixa o Maven (~10 MB) e o WildFly (~250 MB). Depois, tudo vem
+  do cache local (`~/.m2`).
+- Não é preciso configurar banco de dados: a aplicação usa o `java:comp/DefaultDataSource` do
+  servidor (H2 em memória) e carrega dados de demonstração a cada inicialização.
+- A porta **8080** precisa estar livre.
+- No Windows, se aparecer erro de caminho longo ao descompactar o WildFly, coloque o projeto em
+  uma pasta curta (ex.: `C:\dev\estudo`).
+
+Só compilar (gera `target/gestao-obras.war`):
 
 ```bash
-mvn package    # gera target/gestao-obras.war
+mvnw.cmd clean package      # Windows
+./mvnw clean package        # Git Bash, Linux, macOS
 ```
 
-## Executar (WildFly)
-
-Não é preciso configurar banco de dados: a aplicação usa o `java:comp/DefaultDataSource`
-do servidor (H2 em memória no WildFly) e carrega dados de demonstração na inicialização.
-
-```bash
-cp target/gestao-obras.war $WILDFLY_HOME/standalone/deployments/
-$WILDFLY_HOME/bin/standalone.sh
-```
-
-Depois, abra http://localhost:8080/gestao-obras/ no navegador.
+Se preferir um WildFly instalado à mão, copie o WAR para `standalone/deployments/` do servidor e
+inicie-o com `bin/standalone.bat` (Windows) ou `bin/standalone.sh`.
 
 ![Tela de obras](docs/img/passo-04/01-lista.png)
 
@@ -65,3 +91,5 @@ de erro (400, 404, 405, 406, 415, 422). Para rodar pela linha de comando, com o 
 ```bash
 npx newman run postman/gestao-obras-api.postman_collection.json
 ```
+
+(O `npx` vem com o Node.js.)

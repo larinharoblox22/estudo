@@ -1,0 +1,4 @@
+# Scripts do Maven Wrapper: cada um com a quebra de linha que o seu sistema exige,
+# independentemente da configuração core.autocrlf de quem clonar o repositório.
+mvnw    text eol=lf
+*.cmd   text eol=crlf

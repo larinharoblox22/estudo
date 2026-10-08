@@ -18,6 +18,9 @@
         <maven.compiler.parameters>true</maven.compiler.parameters>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jakartaee.version>10.0.0</jakartaee.version>
+        <!-- Servidor usado pelo profile "wildfly" (mvnw -Pwildfly package wildfly:run). -->
+        <wildfly.versao>35.0.1.Final</wildfly.versao>
+        <wildfly.home>${project.build.directory}/wildfly-${wildfly.versao}</wildfly.home>
     </properties>
 
     <dependencies>
@@ -53,6 +56,57 @@
                     <failOnMissingWebXml>false</failOnMissingWebXml>
                 </configuration>
             </plugin>
+
+            <!-- wildfly:run inicia o WildFly que está em ${wildfly.home}, implanta o WAR
+                 e mostra o log no terminal (Ctrl+C para parar). -->
+            <plugin>
+                <groupId>org.wildfly.plugins</groupId>
+                <artifactId>wildfly-maven-plugin</artifactId>
+                <version>5.1.5.Final</version>
+                <configuration>
+                    <jbossHome>${wildfly.home}</jbossHome>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- Executar a aplicação sem instalar nada à mão:
+                 mvnw -Pwildfly package wildfly:run        (Windows: mvnw.cmd ...)
+             Na fase "package", baixa do Maven Central a distribuição oficial do WildFly
+             (só na primeira vez; depois fica no cache ~/.m2) e a descompacta em target/.
+             Depois abra http://localhost:8080/gestao-obras/ -->
+        <profile>
+            <id>wildfly</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>3.8.1</version>
+                        <executions>
+                            <execution>
+                                <id>baixar-wildfly</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.wildfly</groupId>
+                                            <artifactId>wildfly-dist</artifactId>
+                                            <version>${wildfly.versao}</version>
+                                            <type>zip</type>
+                                            <outputDirectory>${project.build.directory}</outputDirectory>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
