@@ -52,6 +52,11 @@ public class ObraServiceBean implements ObraService {
     }
 
     @Override
+    public List<Obra> pesquisar(String nome, StatusObra status) {
+        return obraDao.pesquisar(nome, status);
+    }
+
+    @Override
     public Obra buscarPorId(Long id) {
         return obraDao.buscarPorId(id)
                 .orElseThrow(() -> new EntidadeNaoEncontradaException("Obra " + id + " não encontrada."));

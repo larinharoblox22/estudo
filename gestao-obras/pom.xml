@@ -13,6 +13,9 @@
 
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
+        <!-- Guarda o nome real dos parâmetros dos métodos no .class (javac -parameters):
+             as mensagens de validação da API mostram "dados" em vez de "arg1". -->
+        <maven.compiler.parameters>true</maven.compiler.parameters>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jakartaee.version>10.0.0</jakartaee.version>
     </properties>

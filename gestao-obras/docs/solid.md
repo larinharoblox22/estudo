@@ -43,7 +43,7 @@ reais do projeto.
 > "*Uncle Bob*" significa "Tio Bob", o apelido pelo qual ele é conhecido na
 > comunidade.
 
-## Situação atual (após o Passo 4)
+## Situação atual (após o Passo 5)
 
 Os "Passos" são as etapas em que este projeto vem sendo construído, cada uma com
 o seu relatório na pasta `docs/`. Em linhas gerais: Passo 1, o modelo de dados;
@@ -55,7 +55,7 @@ tela web; Passo 5, um serviço web para outros sistemas.
 | **S** — Responsabilidade Única | ✅ Aplicado. O ponto do enum (texto de tela) foi resolvido no Passo 4; resta só um trade-off consciente: as anotações na entidade `Obra` |
 | **O** — Aberto/Fechado | ✅ Aplicado |
 | **L** — Substituição de Liskov | ✅ Aplicado (o caso dos proxies do Hibernate é o mais interessante) |
-| **I** — Segregação de Interfaces | 🟡 Parcial: services separados por agregado; contrato só de leitura previsto para o Passo 5 |
+| **I** — Segregação de Interfaces | ✅ Aplicado no Passo 5: a API REST depende do contrato só de leitura `ObraConsulta`; os services já eram separados por agregado. Resta, por escolha consciente, o `GenericDao` com CRUD completo |
 | **D** — Inversão de Dependência | ✅ Entre apresentação e negócio (interfaces `@Local`, Passo 3); 🟡 entre negócio e DAO, por escolha pragmática |
 
 > 📘 **Vocabulário rápido desta tabela** (cada item é aprofundado mais adiante):
@@ -824,6 +824,49 @@ há dois contratos separados por agregado: `ObraService` e
 `RelatorioSegurancaService`. Quem só lida com relatórios não depende das
 operações de obra, e vice-versa.
 
+**✅ Onde foi aplicado de forma explícita (Passo 5): o contrato `ObraConsulta`.**
+A API REST para sistemas externos só **lê** obras. Em vez de ela depender do
+`ObraService` inteiro (que tem `salvar` e `excluir`), as operações de leitura
+foram extraídas para uma interface própria, e o `ObraService` passou a
+estendê-la:
+
+```java
+public interface ObraConsulta {                 // só leitura
+    List<Obra> listarTodas();
+    List<Obra> listarPorStatus(StatusObra status);
+    List<Obra> pesquisarPorNome(String termo);
+    List<Obra> pesquisar(String nome, StatusObra status);
+    Obra buscarPorId(Long id);
+}
+
+@Local
+public interface ObraService extends ObraConsulta {   // leitura + escrita
+    Obra salvar(Obra obra);
+    void excluir(Long id);
+}
+```
+
+```java
+// API REST (Passo 5): só precisa ler
+@Inject
+private ObraConsulta obraConsulta;
+
+// Tela JSF (Passo 4): lê e escreve
+@Inject
+private ObraService obraService;
+```
+
+> 📘 **Como uma interface sem `@Local` é injetada?** O mesmo EJB
+> (`ObraServiceBean`) atende as duas: o CDI aceita injetar um EJB por qualquer
+> **superinterface** da sua interface `@Local`. Continua existindo uma única
+> implementação.
+
+O ganho é o **menor privilégio** (*least privilege*: cada parte do sistema só
+recebe o acesso de que precisa). O `ObraResource` **não consegue** chamar
+`salvar` ou `excluir`, nem por engano, porque o compilador não deixa. E qualquer
+tentativa de escrita em `/api/obras/{id}` recebe **405 Method Not Allowed** do
+próprio JAX-RS (comprovado pela coleção do Postman).
+
 **Onde ainda não está aplicado:** o `GenericDao` entrega o CRUD **completo** a
 todos os DAOs. Veja onde isso pode doer no nosso domínio.
 
@@ -844,13 +887,12 @@ clássico de violação do ISP.
 > sobrescrevendo-os para lançar exceção (o que, como você viu na seção L, também
 > quebra o LSP).
 
-Outro caso virá no Passo 5: a API REST só **lista** obras. Se ela depender do
-contrato completo, passa a enxergar métodos de escrita que nunca usa.
-
-**Por que ainda não foi aplicado:** o ISP é sobre **clientes**. Separar interfaces
-sem saber quem vai usá-las é especulação, e acabaríamos com interfaces que ninguém
-consome (viola o YAGNI, *"you aren't gonna need it"*). **Planejado para o Passo 5**,
-quando o cliente só de leitura existir.
+**Por que o `ObraConsulta` só foi criado no Passo 5, e não antes:** o ISP é sobre
+**clientes**. Separar interfaces sem saber quem vai usá-las é especulação, e
+acabaríamos com interfaces que ninguém consome (viola o YAGNI, *"you aren't gonna
+need it"*). A separação foi feita quando o cliente só de leitura (a API) passou a
+existir. Pelo mesmo motivo, o `GenericDao` continua com o CRUD completo: hoje,
+nenhum cliente sofre com isso.
 
 > 📘 **YAGNI** (*"you aren't gonna need it"*, "você não vai precisar disso"):
 > princípio do **XP** (*Extreme Programming*, "Programação Extrema", uma
@@ -859,7 +901,7 @@ quando o cliente só de leitura existir.
 > escrever, testar e manter, e muitas vezes nunca é usado, ou é usado de um jeito
 > diferente do imaginado.
 
-**Como fica quando aplicado:**
+**Se um dia for preciso aplicar o mesmo nos DAOs** (por exemplo, se relatórios virarem registros imutáveis):
 
 ```java
 public interface LeituraDao<T, ID> {
@@ -1183,7 +1225,7 @@ plataforma forçava o DIP, à custa de muito código repetitivo. O EJB 3.1
 |---|---|---|
 | 3 ✅ | D | Interfaces de negócio `@Local` (`ObraService`, `RelatorioSegurancaService`) |
 | 4 ✅ | S | Tirar o texto de tela ("Em andamento") do enum e levar para o `messages.properties` |
-| 5 | I | A API REST passa a depender de um contrato só de leitura |
+| 5 ✅ | I | A API REST passa a depender de um contrato só de leitura (`ObraConsulta`) |
 
 ---
 

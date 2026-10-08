@@ -18,6 +18,9 @@ public interface RelatorioSegurancaService {
      */
     List<RelatorioSeguranca> listarPorObra(Long obraId);
 
+    /** @throws EntidadeNaoEncontradaException se o relatório não existir */
+    RelatorioSeguranca buscarPorId(Long id);
+
     /** Últimos relatórios de todas as obras, com a obra já carregada. */
     List<RelatorioSeguranca> listarRecentes(int limite);
 

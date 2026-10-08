@@ -33,6 +33,12 @@ public class RelatorioSegurancaServiceBean implements RelatorioSegurancaService 
     }
 
     @Override
+    public RelatorioSeguranca buscarPorId(Long id) {
+        return relatorioDao.buscarPorId(id)
+                .orElseThrow(() -> new EntidadeNaoEncontradaException("Relatório " + id + " não encontrado."));
+    }
+
+    @Override
     public List<RelatorioSeguranca> listarRecentes(int limite) {
         return relatorioDao.listarRecentesComObra(limite);
     }

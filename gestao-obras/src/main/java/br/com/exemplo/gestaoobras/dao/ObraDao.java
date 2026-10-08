@@ -4,7 +4,12 @@ import br.com.exemplo.gestaoobras.model.Obra;
 import br.com.exemplo.gestaoobras.model.StatusObra;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -56,6 +61,31 @@ public class ObraDao extends GenericDao<Obra, Long> {
         return em.createQuery(JPQL_PESQUISAR_POR_NOME, Obra.class)
                  .setParameter("termo", "%" + termo.toLowerCase() + "%")
                  .getResultList();
+    }
+
+    /**
+     * Pesquisa com filtros opcionais, montada com a Criteria API: cada filtro só
+     * entra no WHERE se tiver valor. Com JPQL em String, seria preciso concatenar
+     * pedaços de consulta conforme os filtros, o que é frágil e fácil de errar.
+     * Os valores viram parâmetros (bind) na consulta final, sem risco de SQL Injection.
+     */
+    public List<Obra> pesquisar(String nome, StatusObra status) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Obra> consulta = cb.createQuery(Obra.class);
+        Root<Obra> obra = consulta.from(Obra.class);
+
+        List<Predicate> filtros = new ArrayList<>();
+        if (nome != null && !nome.isBlank()) {
+            filtros.add(cb.like(cb.lower(obra.get("nome")), "%" + nome.trim().toLowerCase() + "%"));
+        }
+        if (status != null) {
+            filtros.add(cb.equal(obra.get("status"), status));
+        }
+
+        consulta.select(obra)
+                .where(filtros.toArray(new Predicate[0]))
+                .orderBy(cb.asc(obra.get("nome")));
+        return em.createQuery(consulta).getResultList();
     }
 
     /**

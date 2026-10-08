@@ -1,0 +1,1118 @@
+{
+  "info": {
+    "name": "Gestão de Obras — API REST (JAX-RS)",
+    "description": "Endpoints do Passo 5 do projeto de estudo **Gestão de Obras** (Jakarta EE).\n\n## Como usar\n1. Suba o WildFly com o `gestao-obras.war` implantado (veja o README).\n2. A variável `baseUrl` da coleção aponta para `http://localhost:8080/gestao-obras/api`.\n3. Execute as pastas **na ordem** (ou a coleção inteira pelo *Collection Runner*): algumas requisições usam IDs guardados pelas anteriores (`obraId`, `obraConcluidaId`, `relatorioId`).\n4. Cada requisição tem testes automáticos (aba *Tests*) e uma explicação (aba *Docs*).\n\nOs dados são recriados a cada implantação (H2 em memória). Se rodar a coleção várias vezes, a obra usada pode ficar SUSPENSA pela interdição: o script da primeira requisição escolhe automaticamente uma obra que ainda aceita relatórios.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/gestao-obras/api",
+      "type": "string"
+    },
+    {
+      "key": "obraId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "obraConcluidaId",
+      "value": "4",
+      "type": "string"
+    },
+    {
+      "key": "relatorioId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "relatorioInterdicaoId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Obras (somente leitura)",
+      "description": "Consultas de obras. Nenhum método de escrita: a API de obras depende só do contrato de leitura `ObraConsulta` (ISP).",
+      "item": [
+        {
+          "name": "Listar todas as obras",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obras",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obras"
+              ]
+            },
+            "description": "**GET /obras** — lista todas as obras, ordenadas por nome.\n\n- **GET** busca dados e é *seguro* (não altera nada no servidor) e *idempotente* (repetir dá o mesmo efeito).\n- Resposta **200 OK** com um *array* JSON de obras (ObraDTO).\n- Repare: a resposta **não** traz `Set-Cookie`. A API é *stateless*: não cria sessão, cada requisição é independente.\n\nO script de teste guarda em variáveis o ID de uma obra que aceita relatórios (`obraId`) e o de uma obra concluída (`obraConcluidaId`), usados pelas próximas requisições."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Retorna um array de obras\", function () {",
+                  "    pm.expect(pm.response.json()).to.be.an(\"array\").that.is.not.empty;",
+                  "});",
+                  "pm.test(\"Stateless: nenhuma sessão é criada (sem Set-Cookie)\", function () {",
+                  "    pm.expect(pm.response.headers.has(\"Set-Cookie\")).to.be.false;",
+                  "});",
+                  "const obras = pm.response.json();",
+                  "const ativa = obras.find(o => o.status === \"EM_ANDAMENTO\") || obras.find(o => o.status !== \"CONCLUIDA\");",
+                  "const concluida = obras.find(o => o.status === \"CONCLUIDA\");",
+                  "if (ativa) { pm.collectionVariables.set(\"obraId\", ativa.id); }",
+                  "if (concluida) { pm.collectionVariables.set(\"obraConcluidaId\", concluida.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filtrar obras por status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obras?status=EM_ANDAMENTO",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obras"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "EM_ANDAMENTO",
+                  "description": "PLANEJADA | EM_ANDAMENTO | SUSPENSA | CONCLUIDA"
+                }
+              ]
+            },
+            "description": "**GET /obras?status=EM_ANDAMENTO** — filtro opcional por status.\n\nFiltros, ordenação e paginação vão na **query string** (depois do `?`), porque não identificam um recurso: refinam uma coleção.\nValores aceitos: `PLANEJADA`, `EM_ANDAMENTO`, `SUSPENSA`, `CONCLUIDA` (maiúsculas ou minúsculas)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Todas as obras retornadas estão EM_ANDAMENTO\", function () {",
+                  "    pm.response.json().forEach(o => pm.expect(o.status).to.eql(\"EM_ANDAMENTO\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pesquisar obras por nome (combinável com status)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obras?nome=aurora",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obras"
+              ],
+              "query": [
+                {
+                  "key": "nome",
+                  "value": "aurora",
+                  "description": "Trecho do nome da obra"
+                }
+              ]
+            },
+            "description": "**GET /obras?nome=aurora** — busca parcial, sem diferenciar maiúsculas de minúsculas.\n\nPode ser combinada com `status` (ex.: `?nome=escola&status=SUSPENSA`). No servidor, a consulta é montada com a **Criteria API**: cada filtro só entra no `WHERE` se tiver valor."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Todos os nomes contêm o termo pesquisado\", function () {",
+                  "    pm.response.json().forEach(o => pm.expect(o.nome.toLowerCase()).to.include(\"aurora\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Buscar obra por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obras/{{obraId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obras",
+                "{{obraId}}"
+              ]
+            },
+            "description": "**GET /obras/{id}** — um recurso específico, identificado na **URL** (*path parameter*).\n\n- **200 OK** com a obra.\n- **404 Not Found** se o ID não existir (veja a pasta de erros)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Retorna a obra pedida\", function () {",
+                  "    pm.expect(pm.response.json().id).to.eql(Number(pm.collectionVariables.get(\"obraId\")));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar relatórios de uma obra",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obras/{{obraId}}/relatorios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obras",
+                "{{obraId}}",
+                "relatorios"
+              ]
+            },
+            "description": "**GET /obras/{id}/relatorios** — *sub-recurso*: os relatórios que pertencem a uma obra.\n\nA URL expressa a hierarquia (relatórios **de** uma obra). Retorna 404 se a obra não existir."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Todos os relatórios pertencem à obra\", function () {",
+                  "    const id = Number(pm.collectionVariables.get(\"obraId\"));",
+                  "    pm.response.json().forEach(r => pm.expect(r.obraId).to.eql(id));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Relatórios de segurança",
+      "description": "Criar, consultar e excluir relatórios. Mostra POST (201 + Location), DELETE (204) e idempotência.",
+      "item": [
+        {
+          "name": "Registrar relatório (POST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obras/{{obraId}}/relatorios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obras",
+                "{{obraId}}",
+                "relatorios"
+              ]
+            },
+            "description": "**POST /obras/{id}/relatorios** — cria um relatório de segurança na obra.\n\n- **POST** cria um recurso novo e **não é idempotente**: enviar duas vezes cria dois relatórios.\n- Resposta **201 Created** com:\n  - o header **Location** apontando para a URL do novo recurso (`/api/relatorios/{id}`);\n  - o relatório criado no corpo.\n- O corpo é validado com Bean Validation (data no passado ou hoje, descrição obrigatória) antes de chegar ao código.\n\nO script guarda o ID criado em `relatorioId`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dataInspecao\": \"2026-10-01\",\n  \"descricao\": \"Rede de proteção instalada no 3º pavimento. Sem não conformidades.\",\n  \"interditarObra\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"Header Location aponta para o novo relatório\", function () {",
+                  "    const criado = pm.response.json();",
+                  "    pm.expect(pm.response.headers.get(\"Location\")).to.match(new RegExp(\"/relatorios/\" + criado.id + \"$\"));",
+                  "    pm.collectionVariables.set(\"relatorioId\", criado.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Buscar relatório pelo ID (seguindo o Location)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/relatorios/{{relatorioId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "relatorios",
+                "{{relatorioId}}"
+              ]
+            },
+            "description": "**GET /relatorios/{id}** — o recurso indicado no header `Location` do POST anterior."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"É o relatório criado\", function () {",
+                  "    pm.expect(pm.response.json().id).to.eql(Number(pm.collectionVariables.get(\"relatorioId\")));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar relatórios recentes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/relatorios/recentes?limite=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "relatorios",
+                "recentes"
+              ],
+              "query": [
+                {
+                  "key": "limite",
+                  "value": "5",
+                  "description": "Entre 1 e 100 (padrão 10)"
+                }
+              ]
+            },
+            "description": "**GET /relatorios/recentes?limite=5** — os últimos relatórios de todas as obras.\n\n`limite` é opcional (padrão 10) e deve ficar entre 1 e 100: limitar o tamanho da resposta protege o servidor."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Respeita o limite\", function () {",
+                  "    pm.expect(pm.response.json().length).to.be.at.most(5);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Excluir relatório (DELETE)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/relatorios/{{relatorioId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "relatorios",
+                "{{relatorioId}}"
+              ]
+            },
+            "description": "**DELETE /relatorios/{id}** — remove o relatório.\n\n- **204 No Content**: deu certo e não há nada para devolver no corpo.\n- **DELETE é idempotente**: repetir não muda mais o estado do servidor (o relatório continua não existindo). Veja a próxima requisição."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 204 No Content\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "pm.test(\"Sem corpo na resposta\", function () {",
+                  "    pm.expect(pm.response.text()).to.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Excluir o mesmo relatório de novo (idempotência)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/relatorios/{{relatorioId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "relatorios",
+                "{{relatorioId}}"
+              ]
+            },
+            "description": "Repete o DELETE anterior. O **estado** do servidor é o mesmo (o relatório não existe), mas a **resposta** muda para **404 Not Found**.\n\nIdempotência fala do efeito no servidor, não de a resposta ser idêntica."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 Not Found\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"Corpo no formato padrão de erro (ErroDTO)\", function () {",
+                  "    const erro = pm.response.json();",
+                  "    pm.expect(erro.status).to.eql(404);",
+                  "    pm.expect(erro).to.have.all.keys(\"status\", \"erro\", \"mensagem\", \"detalhes\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registrar relatório COM interdição",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obras/{{obraId}}/relatorios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obras",
+                "{{obraId}}",
+                "relatorios"
+              ]
+            },
+            "description": "**POST** com `\"interditarObra\": true` — não conformidade grave.\n\nNa mesma transação (Passo 3), o relatório é gravado e a obra passa para **SUSPENSA**. Confira na próxima requisição.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dataInspecao\": \"2026-10-02\",\n  \"descricao\": \"Escavação sem escoramento: risco de soterramento. Obra interditada.\",\n  \"interditarObra\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.collectionVariables.set(\"relatorioInterdicaoId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Conferir que a obra foi suspensa",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obras/{{obraId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obras",
+                "{{obraId}}"
+              ]
+            },
+            "description": "Confirma o efeito da interdição: a obra agora está **SUSPENSA**."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Obra está SUSPENSA após a interdição\", function () {",
+                  "    pm.expect(pm.response.json().status).to.eql(\"SUSPENSA\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Erros e semântica HTTP",
+      "description": "Casos de erro e métodos especiais: 400, 404, 405, 406, 415, 422, OPTIONS e HEAD.",
+      "item": [
+        {
+          "name": "Obra inexistente → 404",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obras/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obras",
+                "999999"
+              ]
+            },
+            "description": "Recurso que não existe → **404 Not Found**, com o corpo no formato padrão de erro (`ErroDTO`).\n\nNo servidor, o service lança `EntidadeNaoEncontradaException`, e o `RegraNegocioExceptionMapper` a traduz para 404."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 Not Found\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"Corpo no formato padrão de erro (ErroDTO)\", function () {",
+                  "    const erro = pm.response.json();",
+                  "    pm.expect(erro.status).to.eql(404);",
+                  "    pm.expect(erro).to.have.all.keys(\"status\", \"erro\", \"mensagem\", \"detalhes\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Status inválido → 400",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obras?status=XYZ",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obras"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "XYZ",
+                  "description": "Valor inválido de propósito"
+                }
+              ]
+            },
+            "description": "Parâmetro com valor inválido → **400 Bad Request**: o erro é de quem chamou.\n\nO `status` é convertido à mão no recurso justamente para responder 400 com uma mensagem útil (veja a requisição \"Parâmetro numérico inválido\")."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Corpo no formato padrão de erro (ErroDTO)\", function () {",
+                  "    const erro = pm.response.json();",
+                  "    pm.expect(erro.status).to.eql(400);",
+                  "    pm.expect(erro).to.have.all.keys(\"status\", \"erro\", \"mensagem\", \"detalhes\");",
+                  "});",
+                  "pm.test(\"Informa os valores aceitos\", function () {",
+                  "    pm.expect(pm.response.json().detalhes[0]).to.include(\"Valores aceitos\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Relatório com dados inválidos → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obras/{{obraId}}/relatorios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obras",
+                "{{obraId}}",
+                "relatorios"
+              ]
+            },
+            "description": "Corpo que viola as regras de validação (data no futuro e descrição vazia) → **400 Bad Request**.\n\nCada campo inválido vira um item em `detalhes`. A validação acontece **antes** de o método do recurso ser chamado.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dataInspecao\": \"2099-01-01\",\n  \"descricao\": \"\",\n  \"interditarObra\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Corpo no formato padrão de erro (ErroDTO)\", function () {",
+                  "    const erro = pm.response.json();",
+                  "    pm.expect(erro.status).to.eql(400);",
+                  "    pm.expect(erro).to.have.all.keys(\"status\", \"erro\", \"mensagem\", \"detalhes\");",
+                  "});",
+                  "pm.test(\"Um detalhe para cada campo inválido\", function () {",
+                  "    pm.expect(pm.response.json().detalhes).to.have.lengthOf(2);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Relatório sem corpo → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obras/{{obraId}}/relatorios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obras",
+                "{{obraId}}",
+                "relatorios"
+              ]
+            },
+            "description": "POST sem corpo → **400 Bad Request** (`@NotNull` no parâmetro do recurso)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Corpo no formato padrão de erro (ErroDTO)\", function () {",
+                  "    const erro = pm.response.json();",
+                  "    pm.expect(erro.status).to.eql(400);",
+                  "    pm.expect(erro).to.have.all.keys(\"status\", \"erro\", \"mensagem\", \"detalhes\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Relatório em obra concluída → 422",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obras/{{obraConcluidaId}}/relatorios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obras",
+                "{{obraConcluidaId}}",
+                "relatorios"
+              ]
+            },
+            "description": "JSON válido, mas que viola uma **regra de negócio** (obra concluída não aceita relatórios) → **422 Unprocessable Content**.\n\n- **400**: a requisição está malformada ou com dados inválidos.\n- **422**: a requisição está correta, mas o negócio não permite a operação.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dataInspecao\": \"2026-10-01\",\n  \"descricao\": \"Teste em obra concluída.\",\n  \"interditarObra\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 422 Unprocessable Content\", function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "pm.test(\"Corpo no formato padrão de erro (ErroDTO)\", function () {",
+                  "    const erro = pm.response.json();",
+                  "    pm.expect(erro.status).to.eql(422);",
+                  "    pm.expect(erro).to.have.all.keys(\"status\", \"erro\", \"mensagem\", \"detalhes\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Corpo em texto puro → 415",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "text/plain"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obras/{{obraId}}/relatorios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obras",
+                "{{obraId}}",
+                "relatorios"
+              ]
+            },
+            "description": "O corpo é enviado como texto puro (`Content-Type: text/plain`), mas o endpoint só aceita JSON (`@Consumes(APPLICATION_JSON)`) → **415 Unsupported Media Type**.\n\n- `Content-Type`: o formato do que o cliente **envia**.\n- `Accept`: o formato que o cliente quer **receber** (veja o 406).",
+            "body": {
+              "mode": "raw",
+              "raw": "Relatório em texto puro"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 415 Unsupported Media Type\", function () {",
+                  "    pm.response.to.have.status(415);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Excluir obra pela API → 405",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obras/{{obraId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obras",
+                "{{obraId}}"
+              ]
+            },
+            "description": "As obras são **somente leitura** na API → **405 Method Not Allowed**.\n\nO próprio JAX-RS responde: a URL existe, mas não aceita esse método. O header **Allow** lista os métodos permitidos."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 405 Method Not Allowed\", function () {",
+                  "    pm.response.to.have.status(405);",
+                  "});",
+                  "pm.test(\"Header Allow lista só métodos de leitura\", function () {",
+                  "    const allow = pm.response.headers.get(\"Allow\");",
+                  "    pm.expect(allow).to.include(\"GET\");",
+                  "    pm.expect(allow).to.not.include(\"DELETE\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pedir XML → 406",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/xml"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obras",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obras"
+              ]
+            },
+            "description": "O cliente pede XML (`Accept: application/xml`), mas a API só produz JSON → **406 Not Acceptable**.\n\nIsso é **negociação de conteúdo**: o header `Accept` diz o formato que o cliente aceita, e o `@Produces` diz o que o servidor oferece."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 406 Not Acceptable\", function () {",
+                  "    pm.response.to.have.status(406);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "OPTIONS: quais métodos são permitidos",
+          "request": {
+            "method": "OPTIONS",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obras",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obras"
+              ]
+            },
+            "description": "**OPTIONS** pergunta ao servidor quais métodos a URL aceita. O JAX-RS responde sozinho, com o header **Allow**."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Header Allow presente\", function () {",
+                  "    pm.expect(pm.response.headers.get(\"Allow\")).to.include(\"GET\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "HEAD: só os headers",
+          "request": {
+            "method": "HEAD",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obras",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obras"
+              ]
+            },
+            "description": "**HEAD** é igual ao GET, mas o servidor devolve só os headers, sem corpo. Serve para checar se um recurso existe ou mudou sem baixar o conteúdo. O JAX-RS implementa sozinho a partir do GET."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Sem corpo\", function () {",
+                  "    pm.expect(pm.response.text()).to.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Parâmetro numérico inválido → 404 (pegadinha da especificação)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/relatorios/recentes?limite=abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "relatorios",
+                "recentes"
+              ],
+              "query": [
+                {
+                  "key": "limite",
+                  "value": "abc",
+                  "description": "Valor não numérico de propósito"
+                }
+              ]
+            },
+            "description": "`limite=abc` não é um número. Intuitivamente seria 400, mas a especificação JAX-RS manda responder **404** quando um `@QueryParam` ou `@PathParam` não pode ser convertido para o tipo Java.\n\nÉ por isso que o parâmetro `status` de /obras é recebido como texto e convertido à mão: assim ele devolve 400."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404 Not Found\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Limite fora da faixa → 400",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/relatorios/recentes?limite=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "relatorios",
+                "recentes"
+              ],
+              "query": [
+                {
+                  "key": "limite",
+                  "value": "0",
+                  "description": "Fora da faixa de propósito"
+                }
+              ]
+            },
+            "description": "`limite=0` é um número, mas fora da faixa permitida (1 a 100) → **400 Bad Request**."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Corpo no formato padrão de erro (ErroDTO)\", function () {",
+                  "    const erro = pm.response.json();",
+                  "    pm.expect(erro.status).to.eql(400);",
+                  "    pm.expect(erro).to.have.all.keys(\"status\", \"erro\", \"mensagem\", \"detalhes\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

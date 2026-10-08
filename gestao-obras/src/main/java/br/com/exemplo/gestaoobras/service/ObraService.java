@@ -1,33 +1,19 @@
 package br.com.exemplo.gestaoobras.service;
 
 import br.com.exemplo.gestaoobras.model.Obra;
-import br.com.exemplo.gestaoobras.model.StatusObra;
 import jakarta.ejb.Local;
 
-import java.util.List;
-
 /**
- * Contrato de negócio para a gestão de obras (Session Facade).
+ * Contrato de negócio completo para a gestão de obras (Session Facade):
+ * as consultas herdadas de {@link ObraConsulta} mais as operações de escrita.
  * <p>
  * {@code @Local}: interface de negócio do EJB. Os clientes (bean JSF no Passo 4,
- * recurso REST no Passo 5) dependem desta abstração, nunca da implementação.
+ * recurso REST no Passo 5) dependem de abstrações, nunca da implementação.
  * Todo método roda em uma transação; as violações de regra são sinalizadas com
  * {@link RegraNegocioException}, que desfaz a transação.
  */
 @Local
-public interface ObraService {
-
-    /** Todas as obras, ordenadas por nome. */
-    List<Obra> listarTodas();
-
-    /** Obras com o status informado; com {@code null}, retorna todas. */
-    List<Obra> listarPorStatus(StatusObra status);
-
-    /** Pesquisa parcial por nome; com termo vazio, retorna todas. */
-    List<Obra> pesquisarPorNome(String termo);
-
-    /** @throws EntidadeNaoEncontradaException se a obra não existir */
-    Obra buscarPorId(Long id);
+public interface ObraService extends ObraConsulta {
 
     /**
      * Insere (ID nulo) ou atualiza (ID preenchido) uma obra.
