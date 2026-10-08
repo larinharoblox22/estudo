@@ -18,6 +18,8 @@ paralelos ao Spring Boot.
 
 Transversal: [docs/solid.md](docs/solid.md) — onde cada princípio SOLID aparece no código e por quê.
 
+**Para a entrevista:** [docs/resumao-entrevista.md](docs/resumao-entrevista.md) — revisão de 15 minutos, pitch do projeto e banco de perguntas e respostas com links para cada relatório.
+
 ## Pré-requisito: só o Java
 
 Basta ter um **JDK 17 ou 21** instalado. O Maven e o WildFly são baixados automaticamente:
